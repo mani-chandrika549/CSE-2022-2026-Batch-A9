@@ -1,0 +1,7 @@
+{
+  "name": "AI Geospatial Tourism",
+  "description": "An AI-enhanced geospatial tourism recommendation system for planning personalized trips.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
