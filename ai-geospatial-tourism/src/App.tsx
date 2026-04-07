@@ -26,6 +26,8 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 // @ts-ignore
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
+
+
 let DefaultIcon = L.icon({
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
@@ -73,9 +75,9 @@ const Navbar = ({ user, onLogout }: { user: User | null, onLogout: () => void })
   );
 };
 
-const Card = ({ children, className, onClick, key }: { children: React.ReactNode, className?: string, onClick?: () => void, key?: React.Key }) => (
+const Card = ({ children, className, onClick,  }: { children: React.ReactNode, className?: string, onClick?: () => void,  }) => (
   <div 
-    key={key}
+    
     onClick={onClick}
     className={cn("bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden", className, onClick && "cursor-pointer")}
   >
@@ -103,10 +105,7 @@ const Welcome = () => {
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 text-center max-w-3xl"
       >
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold mb-6">
-          <Sparkles className="w-4 h-4" />
-          AI-Powered Travel Planning
-        </div>
+        
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 mb-6">
           AI-Enhanced Geospatial <br />
           <span className="text-emerald-600">Tourism Recommendation</span>
@@ -282,10 +281,32 @@ const Planner = ({ user }: { user: User }) => {
 
   const categories = ['all', 'Beaches', 'Mountains', 'Heritage', 'Nature', 'Adventure', 'Wildlife'];
 
+    const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
+
+useEffect(() => {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      setLocation({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude
+      });
+    },
+    (err) => {
+      console.log("Location denied or error", err);
+    }
+  );
+}, []);
+  
+
   const handleGetRecommendations = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/destinations?month=${month}&preference=${interest}`);
+      const url = location
+  ? `/api/destinations?month=${month}&preference=${interest}&userId=${user.id}&lat=${location.lat}&lon=${location.lon}`
+  : `/api/destinations?month=${month}&preference=${interest}&userId=${user.id}`;
+
+
+const res = await fetch(url);
       const data = await res.json();
       setDestinations(data);
     } catch (err) {
@@ -302,7 +323,7 @@ const Planner = ({ user }: { user: User }) => {
       body: JSON.stringify({
         user_id: user.id,
         month,
-        interest,
+        interest: interest === "all" ? dest.category : interest,
         destination_name: dest.name
       })
     });
@@ -374,8 +395,18 @@ const Planner = ({ user }: { user: User }) => {
                   </div>
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
+
                   <h3 className="text-xl font-bold text-slate-900 mb-2">{dest.name}</h3>
+                  <p className="text-xs text-emerald-600 mt-1">
+  {dest.reason?.personalized && "Based on your interest"}
+  {dest.reason?.nearby && " • Nearby"}
+</p>
                   <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">{dest.description}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+  {dest.distance !== null && dest.distance !== undefined
+    ? `${dest.distance.toFixed(1)} km away`
+    : ""}
+</p>
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
                     <div className="flex items-center gap-1 text-xs font-medium text-slate-400">
                       <Calendar className="w-3 h-3" />
